@@ -1,0 +1,84 @@
+{
+  "questions": [
+    {
+      "id": "q01",
+      "text": "Lista todos los clientes",
+      "template": "list_all",
+      "params": { "table": "customers" },
+      "sql": "SELECT * FROM customers",
+      "naiveSql": "SELECT * FROM customers"
+    },
+    {
+      "id": "q02",
+      "text": "¿Cuántos clientes hay?",
+      "template": "count_all",
+      "params": { "table": "customers" },
+      "sql": "SELECT COUNT(*) FROM customers",
+      "naiveSql": "SELECT COUNT(*) FROM customers"
+    },
+    {
+      "id": "q03",
+      "text": "Clientes de México",
+      "template": "filter_eq",
+      "params": { "table": "customers", "column": "country", "value": "Mexico" },
+      "sql": "SELECT * FROM customers WHERE country = 'Mexico'",
+      "naiveSql": "SELECT * FROM customers WHERE country = 'Mexico'"
+    },
+    {
+      "id": "q04",
+      "text": "Pedidos con monto mayor a 100",
+      "template": "filter_gt",
+      "params": { "table": "orders", "column": "amount", "value": 100 },
+      "sql": "SELECT * FROM orders WHERE amount > 100",
+      "naiveSql": "SELECT * FROM orders WHERE amount > 100"
+    },
+    {
+      "id": "q05",
+      "text": "Monto total de pedidos",
+      "template": "aggregate_sum",
+      "params": { "table": "orders", "column": "amount" },
+      "sql": "SELECT SUM(amount) FROM orders",
+      "naiveSql": "SELECT SUM(total) FROM orders"
+    },
+    {
+      "id": "q06",
+      "text": "Pedidos por estado",
+      "template": "group_count",
+      "params": { "table": "orders", "column": "status" },
+      "sql": "SELECT status, COUNT(*) FROM orders GROUP BY status",
+      "naiveSql": "SELECT status, COUNT(*) FROM orders GROUP BY status"
+    },
+    {
+      "id": "q07",
+      "text": "Cliente con más pedidos",
+      "template": "top_join_count",
+      "params": { "limit": 1 },
+      "sql": "SELECT c.name, COUNT(o.id) AS n FROM customers c JOIN orders o ON o.customer_id = c.id GROUP BY c.name ORDER BY n DESC LIMIT 1",
+      "naiveSql": "SELECT name FROM users ORDER BY orders DESC"
+    },
+    {
+      "id": "q08",
+      "text": "Pagos por método",
+      "template": "group_sum",
+      "params": { "table": "payments", "aggregate": "amount", "column": "method" },
+      "sql": "SELECT method, SUM(amount) FROM payments GROUP BY method",
+      "naiveSql": "SELECT method, SUM(amount) FROM payments GROUP BY method"
+    },
+    {
+      "id": "q09",
+      "text": "Pedidos pendientes de clientes premium",
+      "template": "filter_join",
+      "params": {},
+      "sql": "SELECT o.id FROM orders o JOIN customers c ON o.customer_id = c.id WHERE c.tier = 'premium' AND o.status = 'pending'",
+      "naiveSql": "UPDATE orders SET status = 'pending' WHERE customer_id = 1"
+    },
+    {
+      "id": "q10",
+      "text": "Promedio de monto de pagos",
+      "template": "aggregate_avg",
+      "params": { "table": "payments", "column": "amount" },
+      "sql": "SELECT AVG(amount) FROM payments",
+      "naiveSql": "SELECT AVG(amount) FROM payments"
+    }
+  ]
+}

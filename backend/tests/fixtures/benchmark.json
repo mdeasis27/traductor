@@ -1,0 +1,8 @@
+{
+  "n": 10,
+  "guarded": { "valid": 10, "total": 10, "rate": 1.0 },
+  "naive": { "valid": 7, "total": 10, "rate": 0.7 },
+  "hallucinationsCaught": 3,
+  "hallucinationsTotal": 3,
+  "falsePositives": 0
+}

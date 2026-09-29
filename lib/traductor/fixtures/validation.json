@@ -1,0 +1,12 @@
+{
+  "cases": [
+    { "id": "h01", "sql": "SELECT * FROM users", "expected": ["table:users"] },
+    { "id": "h02", "sql": "SELECT email FROM customers", "expected": ["column:customers.email"] },
+    { "id": "h03", "sql": "DELETE FROM orders WHERE id = 1", "expected": ["dml:DELETE"] },
+    { "id": "h04", "sql": "SELECT * FROM customers WHERE unknown = 1", "expected": ["column:customers.unknown"] },
+    { "id": "h05", "sql": "SELECT * FROM customers", "expected": [] },
+    { "id": "h06", "sql": "SELECT name, country FROM customers", "expected": [] },
+    { "id": "h07", "sql": "DROP TABLE customers", "expected": ["dml:DROP"] },
+    { "id": "h08", "sql": "SELECT o.total FROM orders o", "expected": ["column:orders.total"] }
+  ]
+}

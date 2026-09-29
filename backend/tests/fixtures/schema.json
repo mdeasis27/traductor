@@ -1,0 +1,28 @@
+{
+  "tables": {
+    "customers": {
+      "columns": {
+        "id": "integer",
+        "name": "text",
+        "country": "text",
+        "tier": "text"
+      }
+    },
+    "orders": {
+      "columns": {
+        "id": "integer",
+        "customer_id": "integer",
+        "amount": "numeric",
+        "status": "text"
+      }
+    },
+    "payments": {
+      "columns": {
+        "id": "integer",
+        "order_id": "integer",
+        "amount": "numeric",
+        "method": "text"
+      }
+    }
+  }
+}
