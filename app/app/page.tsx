@@ -1,29 +1,127 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Alert } from "@/design-system/components/alert";
 import { Card } from "@/design-system/components/card";
 import { MetricCard } from "@/design-system/components/metric-card";
 import { StatusBadge } from "@/design-system/components/status-badge";
-import {
-  getBenchmark,
-  getCaughtExample,
-  getQuestions,
-  getSchemaStats,
-  getValidationCases,
-} from "@/lib/traductor/demo";
+import { generate } from "@/lib/traductor/generate";
+import { validateSql, violationLabel } from "@/lib/traductor/validate";
+import { getBenchmark, getSchemaStats } from "@/lib/traductor/demo";
+import type { Question, Schema, Verdict } from "@/lib/traductor/types";
+import schemaRaw from "@/lib/traductor/data/schema.json";
 
 const BENCH = getBenchmark();
 const STATS = getSchemaStats();
-const QUESTIONS = getQuestions();
-const CASES = getValidationCases();
-const CAUGHT = getCaughtExample();
+const SCHEMA = schemaRaw as unknown as Schema;
 
-function pct(v: number) {
-  return `${(v * 100).toFixed(0)}%`;
+const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
+
+type TemplateKey =
+  | "list_all"
+  | "count_all"
+  | "filter_eq"
+  | "filter_gt"
+  | "aggregate_sum"
+  | "group_count"
+  | "top_join_count"
+  | "group_sum"
+  | "filter_join"
+  | "aggregate_avg";
+
+const TEMPLATES: {
+  id: TemplateKey;
+  label: string;
+  table: boolean;
+  column: boolean;
+  value: boolean;
+  aggregate: boolean;
+  limit: boolean;
+}[] = [
+  { id: "list_all", label: "Listar todo", table: true, column: false, value: false, aggregate: false, limit: false },
+  { id: "count_all", label: "Contar registros", table: true, column: false, value: false, aggregate: false, limit: false },
+  { id: "filter_eq", label: "Filtrar por igualdad", table: true, column: true, value: true, aggregate: false, limit: false },
+  { id: "filter_gt", label: "Filtrar por mayor que", table: true, column: true, value: true, aggregate: false, limit: false },
+  { id: "aggregate_sum", label: "Suma agregada", table: true, column: true, value: false, aggregate: false, limit: false },
+  { id: "group_count", label: "Conteo agrupado", table: true, column: true, value: false, aggregate: false, limit: false },
+  { id: "top_join_count", label: "Cliente con más pedidos", table: false, column: false, value: false, aggregate: false, limit: true },
+  { id: "group_sum", label: "Suma agrupada", table: true, column: true, value: false, aggregate: true, limit: false },
+  { id: "filter_join", label: "Filtro con join", table: false, column: false, value: false, aggregate: false, limit: false },
+  { id: "aggregate_avg", label: "Promedio agregado", table: true, column: true, value: false, aggregate: false, limit: false },
+];
+
+const INPUT_CLASS =
+  "rounded-[var(--radius-md)] border border-[var(--border)] bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/60";
+
+type GenResult =
+  | { kind: "ok"; sql: string; verdict: Verdict }
+  | { kind: "error"; message: string };
+
+type ValResult = { sql: string; verdict: Verdict };
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
 }
 
 export default function AppPage() {
+  const [template, setTemplate] = useState<TemplateKey>("list_all");
+  const [table, setTable] = useState("customers");
+  const [column, setColumn] = useState("name");
+  const [value, setValue] = useState("Mexico");
+  const [aggregate, setAggregate] = useState("amount");
+  const [limit, setLimit] = useState("1");
+  const [gen, setGen] = useState<GenResult | null>(null);
+
+  const [rawSql, setRawSql] = useState("SELECT email FROM customers");
+  const [val, setVal] = useState<ValResult | null>(null);
+
+  const cfg = TEMPLATES.find((t) => t.id === template)!;
+
+  function runGenerate() {
+    const params: Record<string, string | number> = {};
+    if (cfg.table) params.table = table;
+    if (cfg.column) params.column = column;
+    if (cfg.value) params.value = template === "filter_gt" ? Number(value) : value;
+    if (cfg.aggregate) params.aggregate = aggregate;
+    if (cfg.limit) params.limit = Number(limit);
+
+    const question: Question = {
+      id: "custom",
+      text: "Consulta en vivo",
+      template,
+      params,
+      sql: "",
+      naiveSql: "",
+    };
+
+    try {
+      const sql = generate(question, SCHEMA);
+      const verdict = validateSql(sql, SCHEMA);
+      setGen({ kind: "ok", sql, verdict });
+    } catch (err) {
+      setGen({ kind: "error", message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
+  function runValidate() {
+    const verdict = validateSql(rawSql, SCHEMA);
+    setVal({ sql: rawSql, verdict });
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-background/80 backdrop-blur-md">
@@ -88,109 +186,174 @@ export default function AppPage() {
           />
         </div>
 
-        {/* ── WORKED EXAMPLE ──────────────────── */}
+        {/* ── GENERATOR PLAYGROUND ────────────── */}
         <section>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">Alucinación cazada antes de ejecutar</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">Generador de SQL en vivo</h2>
           <p className="text-sm text-muted-foreground mb-5">
-            El modelo naive emitió <code className="font-mono text-xs">SUM(total)</code> sobre
-            <code className="font-mono text-xs"> orders</code>, pero la columna real es
-            <code className="font-mono text-xs"> amount</code>. El guardrail lo rechaza con su
-            violación exacta, y nunca llega a la base de datos.
+            Elige una plantilla y sus parámetros. El generador guardado llena la plantilla
+            pre-validada y produce SQL siempre válido — una tabla o columna inexistente es
+            estructuralmente imposible. Schema: {STATS.tables} tablas, {STATS.columns} columnas.
           </p>
-          <Card className="p-5">
-            <p className="text-sm font-semibold text-foreground mb-3">{CAUGHT.question}</p>
-            <div className="rounded-[var(--radius-md)] bg-muted/40 px-4 py-3 font-mono text-sm">
-              {CAUGHT.sql}
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <StatusBadge tone="danger">rechazado</StatusBadge>
-              {CAUGHT.violations.map((v) => (
-                <span key={v} className="rounded-full border border-danger/25 bg-danger/10 px-2.5 py-0.5 font-mono text-xs text-danger">
-                  {v}
-                </span>
-              ))}
-            </div>
-          </Card>
-        </section>
 
-        {/* ── BENCHMARK TABLE ─────────────────── */}
-        <section>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">Guardado vs naive</h2>
-          <p className="text-sm text-muted-foreground mb-5">
-            El generador guardado llena plantillas parametrizadas y siempre produce SQL válido. El
-            naive emite SQL crudo y alucina en 3 de {QUESTIONS.length} preguntas (columna, tabla y
-            un DML) — todos cazados por el guardrail.
-          </p>
-          <div className="overflow-x-auto rounded-[var(--radius-md)] shadow-[var(--shadow-card)] bg-card">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border)] bg-[var(--gray-50)]">
-                  <th scope="col" className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pregunta</th>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">SQL naive</th>
-                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">Veredicto</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {QUESTIONS.map((q) => (
-                  <tr key={q.id}>
-                    <td className="px-5 py-3.5 align-top">
-                      <p className="font-semibold text-foreground">{q.text}</p>
-                      <p className="mt-1 font-mono text-xs text-muted-foreground">{q.generated}</p>
-                    </td>
-                    <td className="px-4 py-3.5 align-top font-mono text-xs text-muted-foreground">
-                      {q.naiveSql}
-                    </td>
-                    <td className="px-4 py-3.5 align-top text-right">
-                      {q.naiveOk ? (
-                        <StatusBadge tone="success">ok</StatusBadge>
-                      ) : (
-                        <div className="flex flex-col items-end gap-1">
-                          <StatusBadge tone="danger">rechazado</StatusBadge>
-                          {q.naiveViolations.map((v) => (
-                            <span key={v} className="font-mono text-[10px] text-danger">{v}</span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Card className="p-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Plantilla">
+                <select
+                  value={template}
+                  onChange={(e) => setTemplate(e.target.value as TemplateKey)}
+                  className={INPUT_CLASS}
+                >
+                  {TEMPLATES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              {cfg.table && (
+                <Field label="Tabla">
+                  <input
+                    type="text"
+                    value={table}
+                    onChange={(e) => setTable(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </Field>
+              )}
+              {cfg.column && (
+                <Field label="Columna">
+                  <input
+                    type="text"
+                    value={column}
+                    onChange={(e) => setColumn(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </Field>
+              )}
+              {cfg.value && (
+                <Field label={template === "filter_gt" ? "Valor (número)" : "Valor (string)"}>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </Field>
+              )}
+              {cfg.aggregate && (
+                <Field label="Columna a agregar">
+                  <input
+                    type="text"
+                    value={aggregate}
+                    onChange={(e) => setAggregate(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </Field>
+              )}
+              {cfg.limit && (
+                <Field label="Límite">
+                  <input
+                    type="text"
+                    value={limit}
+                    onChange={(e) => setLimit(e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </Field>
+              )}
+            </div>
+            <button
+              onClick={runGenerate}
+              className="mt-4 w-full rounded-[var(--radius-md)] bg-accent px-4 py-2.5 text-sm font-medium text-[#ffffff] hover:bg-accent/90 transition-colors"
+            >
+              Generar SQL
+            </button>
+          </Card>
+
+          {gen && (
+            <Card className="mt-4 p-5">
+              {gen.kind === "ok" ? (
+                <>
+                  <div className="rounded-[var(--radius-md)] bg-muted/40 px-4 py-3 font-mono text-sm">
+                    {gen.sql}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {gen.verdict.ok ? (
+                      <StatusBadge tone="success" dot>válido</StatusBadge>
+                    ) : (
+                      <>
+                        <StatusBadge tone="danger" dot>rechazado</StatusBadge>
+                        {gen.verdict.violations.map((v) => (
+                          <span
+                            key={violationLabel(v)}
+                            className="rounded-full border border-danger/25 bg-danger/10 px-2.5 py-0.5 font-mono text-xs text-danger"
+                          >
+                            {violationLabel(v)}
+                          </span>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <Alert tone="danger" title="No se pudo generar">
+                  {gen.message}
+                </Alert>
+              )}
+            </Card>
+          )}
         </section>
 
         {/* ── HALLUCINATION DETECTOR ──────────── */}
         <section>
-          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">Detector de alucinaciones</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground mb-1">Detector de alucinaciones en vivo</h2>
           <p className="text-sm text-muted-foreground mb-5">
-            Batería adversarial sobre el schema ({STATS.tables} tablas, {STATS.columns} columnas):
-            tablas y columnas inexistentes, y DDL/DML. Cada caso con su veredicto esperado, pinado
-            por fixtures compartidos entre TS y Python.
+            Pega SQL crudo (de un modelo externo, por ejemplo) y valida cada referencia contra el
+            schema. El guardrail rechaza tablas y columnas inexistentes y cualquier DDL/DML.
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {CASES.map((c) => (
-              <Card key={c.id} className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-xs text-muted-foreground">{c.id}</span>
-                  {c.ok ? (
-                    <StatusBadge tone="success">válido</StatusBadge>
-                  ) : (
-                    <StatusBadge tone="danger">rechazado</StatusBadge>
-                  )}
-                </div>
-                <p className="font-mono text-sm text-foreground mb-2">{c.sql}</p>
-                {c.violations.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {c.violations.map((v) => (
-                      <span key={v} className="rounded-full border border-danger/25 bg-danger/10 px-2 py-0.5 font-mono text-[10px] text-danger">
-                        {v}
-                      </span>
-                    ))}
-                  </div>
+
+          <Card className="p-5">
+            <textarea
+              value={rawSql}
+              onChange={(e) => setRawSql(e.target.value)}
+              rows={4}
+              className={`${INPUT_CLASS} w-full font-mono`}
+            />
+            <button
+              onClick={runValidate}
+              className="mt-4 w-full rounded-[var(--radius-md)] bg-accent px-4 py-2.5 text-sm font-medium text-[#ffffff] hover:bg-accent/90 transition-colors"
+            >
+              Validar SQL
+            </button>
+          </Card>
+
+          {val && (
+            <Card className="mt-4 p-5">
+              <div className="flex items-center gap-3">
+                {val.verdict.ok ? (
+                  <StatusBadge tone="success" dot>válido</StatusBadge>
+                ) : (
+                  <StatusBadge tone="danger" dot>rechazado</StatusBadge>
                 )}
-              </Card>
-            ))}
-          </div>
+                <span className="text-sm text-muted-foreground">
+                  {val.verdict.ok
+                    ? "Sin violaciones: listo para ejecutar."
+                    : `${val.verdict.violations.length} violación${val.verdict.violations.length === 1 ? "" : "es"}.`}
+                </span>
+              </div>
+              {val.verdict.violations.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {val.verdict.violations.map((v) => (
+                    <span
+                      key={violationLabel(v)}
+                      className="rounded-full border border-danger/25 bg-danger/10 px-2.5 py-0.5 font-mono text-xs text-danger"
+                    >
+                      {violationLabel(v)}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
         </section>
 
         {/* ── ARCHITECTURE NOTE ───────────────── */}
@@ -199,8 +362,7 @@ export default function AppPage() {
             El generador guardado nunca emite SQL crudo: llena una plantilla pre-validada, así que
             una tabla o columna inexistente es estructuralmente imposible. El detector de
             alucinaciones es la red de seguridad que corre antes de ejecutar cualquier SQL — ya sea
-            del generador o de un modelo externo. El extractor de referencias es determinista
-            (proxy documentado de un parser/planner SQL real).
+            del generador o de un modelo externo.
           </Alert>
         </section>
 
