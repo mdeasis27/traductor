@@ -1,0 +1,46 @@
+{
+  "repository": "traductor",
+  "checks": [
+    {
+      "locale": "en",
+      "htmlLang": "en",
+      "buttons": [
+        "Interpret locally",
+        "Cancel",
+        "Reset"
+      ],
+      "inputs": 1,
+      "clicked": "Interpret locally",
+      "traceEvents": 2,
+      "keyboardFocus": "SELECT",
+      "editingInvalidatesEvidence": true,
+      "resetClearsResult": true,
+      "cancelUsable": true,
+      "languageSwitchWithoutStorage": true
+    },
+    {
+      "locale": "es",
+      "htmlLang": "es",
+      "buttons": [
+        "Interpretar localmente",
+        "Cancelar",
+        "Reiniciar"
+      ],
+      "inputs": 1,
+      "clicked": "Interpretar localmente",
+      "traceEvents": 2,
+      "keyboardFocus": "SELECT",
+      "editingInvalidatesEvidence": true,
+      "resetClearsResult": true,
+      "cancelUsable": true,
+      "languageSwitchWithoutStorage": true
+    }
+  ],
+  "errors": [],
+  "legacyRedirectRetainsQuery": true,
+  "unsupportedLocale404": true,
+  "translatedBodyDiffers": true,
+  "reducedMotionDisablesPlayback": true,
+  "mobileNoOverflow": true,
+  "noExternalOrApiRequests": true
+}

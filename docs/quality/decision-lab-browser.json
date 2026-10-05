@@ -1,0 +1,53 @@
+{
+  "repository": "traductor",
+  "scope": "Real React component with controlled locale; Next routes not tested.",
+  "checks": [
+    {
+      "locale": "en",
+      "scenarios": [
+        {
+          "preset": "Supported question\nReturns local rows",
+          "outcome": "Use the validated local result\n\n2 local rows came from list_all."
+        },
+        {
+          "preset": "Refused request\nNo template runs",
+          "outcome": "Use the validated local result\n\n2 local rows came from list_all."
+        }
+      ],
+      "localizedValidationError": "A question is required.",
+      "mobileNoOverflow": true,
+      "reducedMotion": true,
+      "keyboard": true,
+      "noRequests": true,
+      "sceneChangesWithScenario": true,
+      "editingClearsPresetAndTrace": true,
+      "resetRestoresFirstPreset": true,
+      "cancelControlPresent": true,
+      "presetRestoresAllInputs": true
+    },
+    {
+      "locale": "es",
+      "scenarios": [
+        {
+          "preset": "Pregunta compatible\nDevuelve filas locales",
+          "outcome": "Usa el resultado local validado\n\n2 filas locales provienen de list_all."
+        },
+        {
+          "preset": "Solicitud rechazada\nNo se ejecuta plantilla",
+          "outcome": "Usa el resultado local validado\n\n2 filas locales provienen de list_all."
+        }
+      ],
+      "localizedValidationError": "Introduce una pregunta para interpretarla localmente.",
+      "mobileNoOverflow": true,
+      "reducedMotion": true,
+      "keyboard": true,
+      "noRequests": true,
+      "sceneChangesWithScenario": true,
+      "editingClearsPresetAndTrace": true,
+      "resetRestoresFirstPreset": true,
+      "cancelControlPresent": true,
+      "presetRestoresAllInputs": true
+    }
+  ],
+  "errors": []
+}
