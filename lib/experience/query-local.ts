@@ -1,0 +1,8 @@
+import { routeQuestion } from "../traductor/route";
+import { generate } from "../traductor/generate";
+import { validateSql } from "../traductor/validate";
+import { getSchema } from "../traductor/demo";
+
+const records: Record<string, Array<Record<string, string | number>>> = { customers: [{ id: 1, name: "Avery", country: "Mexico", tier: "premium" }, { id: 2, name: "Mina", country: "Brazil", tier: "standard" }], orders: [{ id: 10, customer_id: 1, amount: 120, status: "pending" }, { id: 11, customer_id: 2, amount: 80, status: "paid" }], payments: [{ id: 40, order_id: 10, amount: 120, method: "card" }] };
+export type LocalQueryResult = { status: "computed"; template: string; sql: string; rows: Array<Record<string, string | number>> } | { status: "refused"; reason: string; rows: [] };
+export function queryLocal(question: string): LocalQueryResult { const routed = routeQuestion(question); if (!routed) return { status: "refused", reason: "This question does not match a supported local template.", rows: [] }; const schema = getSchema(); try { const sql = generate(routed, schema); const verdict = validateSql(sql, schema); if (!verdict.ok) return { status: "refused", reason: "Schema validation rejected the template.", rows: [] }; const table = typeof routed.params.table === "string" ? routed.params.table : ""; const rows = records[table]; if (!rows) return { status: "refused", reason: "The requested table is not part of the seeded dataset.", rows: [] }; return { status: "computed", template: routed.template, sql, rows }; } catch (error) { return { status: "refused", reason: error instanceof Error ? error.message : "Unsupported query.", rows: [] }; } }

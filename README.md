@@ -1,101 +1,79 @@
-# Traductor
+# Business query translator
 
-**Text-to-SQL with schema guardrails** — parametrized templates (the model never emits raw
-SQL), a deterministic hallucination detector, and a SELECT-only allowlist.
+[Español](README.es.md) · [Try the demo](https://traductor-manueldeasis27-2515s-projects.vercel.app/en/app) · [Case study](https://manueldeasis.com/en/projects/traductor) · [Source](https://github.com/mdeasis27/traductor)
 
-> **Result:** 100% of shipped SQL is valid (exact-match against gold), with **0 false
-> positives**. The guardrail catches **3/3 hallucinations** a naive raw-SQL model emits —
-> an unknown column (`total`), an unknown table (`users`), and an `UPDATE` — before any of
-> them reaches the database. Without the guardrail the naive model is only **70% valid**.
+![Actual interactive local interface](docs/images/cover.png)
 
----
+Ask a supported question over a seeded local schema and inspect validated results.
 
-## Result
+## Two situations to compare
 
-### Guarded vs naive validity (n = 10)
+**Customers:** list customers A validated template returns rows.
 
-| Path | Valid | Rate |
-|---|---|---|
-| Guarded generator (templates + validation) | 10 / 10 | **100%** |
-| Naive raw-SQL model (no guardrail) | 7 / 10 | 70% |
+![Customers](docs/images/scenario-a.png)
 
-The 3 hallucinated outputs — one bad column, one bad table, one DML statement — are all
-flagged by the guardrail **before execution**: 100% recall, 0 false positives.
+**Unsupported:** drop customers The local router refuses it.
 
-### Hallucination detector (8 adversarial cases)
+![Unsupported](docs/images/scenario-b.png)
 
-| Case | SQL | Verdict |
-|---|---|---|
-| h01 | `SELECT * FROM users` | `table:users` |
-| h02 | `SELECT email FROM customers` | `column:customers.email` |
-| h03 | `DELETE FROM orders WHERE id = 1` | `dml:DELETE` |
-| h04 | `SELECT * FROM customers WHERE unknown = 1` | `column:customers.unknown` |
-| h05 | `SELECT * FROM customers` | valid |
-| h06 | `SELECT name, country FROM customers` | valid |
-| h07 | `DROP TABLE customers` | `dml:DROP` |
-| h08 | `SELECT o.total FROM orders o` | `column:orders.total` |
+## Business use case
 
----
+Natural language questions can request unsafe data operations.
+
+**Who uses it:** Business analyst.
+
+**The decision:** Use a validated template or refuse the request.
+
+Choose a supported question, route it to a template, and inspect returned rows.
+
+### Try the decision
+
+**Customers:** list customers A validated template returns rows.
+
+**Unsupported:** drop customers The local router refuses it.
+
+Choose a scenario, edit its controls and run the local computation. Step through the visual process or reveal all steps. Reset before comparing the second scenario.
+
+## How to try it
+
+Open `/en/app` (English, default) or `/es/app` (Spanish). Change the scenario inputs and run the computation. Inspect the resulting decision, evidence and computed trace. Playback reveals completed local steps; it does not measure a live model. Reset starts a new local scenario. Changing language resets the scenario; the interface displays a reset notice.
+
+The primary demo needs no account, API key or database. Public links refer to the existing deployment; local redesign changes are pending publication.
+
+## Local setup and verification
+
+Requires Node.js 22 and pnpm 10.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+pnpm test
+node node_modules/typescript/bin/tsc --noEmit --incremental false
+pnpm lint
+pnpm build
+```
+
+Open `http://localhost:3000/en/app`. Recorded validation covers tests, lint, TypeScript and production builds. See [command results](docs/quality/decision-lab-verification.json) and [browser component checks](docs/quality/decision-lab-browser.json). The new browser checks exercise real React components and production CSS with controlled locale navigation; they do not certify Next routes or public deployment.
 
 ## Architecture
 
-```
-lib/traductor/              # canonical core (TypeScript, tested)
-  schema.ts                 #   schema lookups (tables / columns)
-  normalize.ts              #   SQL normalization for exact-match
-  validate.ts               #   hallucination detector + SELECT-only guardrail
-  generate.ts               #   guarded generator (parametrized templates)
-  benchmark.ts              #   guarded vs naive validity + recall / FP rate
-  demo.ts                   #   wires schema + questions + cases into every number
-  data/                     #   schema.json + questions.json (committed)
-  fixtures/                 #   benchmark.json + validation.json (pinned, shared)
-backend/                    # same math in Python + pytest (authoritative)
-  src/traductor/            #   schema.py · normalize.py · validate.py · generate.py · benchmark.py
-  tests/                    #   pinned to tests/fixtures/{benchmark,validation}.json
-app/                        # Next.js landing + demo dashboard (Vercel, demo mode)
-```
+- `app/[lang]/`: localized browser experience.
+- `lib/experience/`: typed local adapter, validation and run traces.
+- `design-system/`: shared visual tokens, locale controls and execution/replay presentation.
+- `app/api/`: optional server integrations; the primary demo does not require them.
 
-Two defenses, two failure modes:
+Technology: Next.js 16, TypeScript, Python, Vitest, pytest, Tailwind CSS v4.
 
-1. **Parametrized templates** — the generator fills a pre-validated template, so a
-   hallucinated table/column is *structurally impossible* from this path. The model's job is
-   reduced to choosing a template and supplying values.
-2. **The guardrail** — a deterministic reference extractor checks every table/column against
-   the schema and enforces SELECT-only. It runs on *any* SQL (generated or external) before
-   execution, so a raw model's hallucination is caught, not shipped.
+## Evidence and limitations
 
-## Design decisions & tradeoffs
+Question, schema template, and rows form a visible path.
 
-1. **The model fills params, never emits raw SQL.** Raw SQL is where hallucinations live. A
-   template can be validated once against the schema and reused forever; the cost is that new
-   query shapes need a new template.
-2. **The detector is a deterministic reference extractor, not a real SQL parser.** It is a
-   documented proxy (like the lexical retriever was for embeddings). It covers the constrained
-   grammar of the demo exactly and reports false positives honestly; production would swap in
-   a real planner/`EXPLAIN`.
-3. **The naive baseline is a raw model's committed output, not a strawman.** It gets 7/10
-   right — enough to show the guardrail's value without pretending the model is useless.
+Question-to-template-to-validation flow; no arbitrary SQL execution or database is required.
 
-## What did not work
+Makes safe local data access understandable.
 
-- **Exact-match is brittle as a general metric.** Real SQL has many equivalent forms; here the
-  templates make gold and generated identical by construction, so exact-match is honest. A real
-  system would compare result sets, not strings.
-- **The reference extractor assumes a constrained grammar.** Nested subqueries, `WITH`, and
-  column-name ambiguity across a `JOIN` are out of scope for the demo — a real planner resolves
-  those, and the demo documents the boundary rather than hiding it.
+**Limits:** Only local safe templates are available. These portfolio prototypes do not claim measured production impact.
 
-## Run it
+Inputs use fictional or anonymized examples. Optional live integrations require their own credentials and operational setup. Secrets belong in the configured secret manager, never in local secret files or Git. Use the existing `infisical run -- <command>` workflow when live integration is needed. This repository does not publish or deploy automatically as part of the local demo.
 
-```bash
-# frontend demo + TS tests
-pnpm install && pnpm dev      # http://localhost:3000
-pnpm test                     # 43 vitest tests
-
-# backend (authoritative math) — Python 3.12+
-cd backend && uv sync --extra dev && uv run pytest   # 5 tests, pinned fixtures
-```
-
-## Stack
-
-Next.js 16 · TypeScript · Vitest · Tailwind v4 · Python 3.13 · pytest
+![Actual English demo capture](docs/images/demo.png)
