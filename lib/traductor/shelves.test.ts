@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import schemaRaw from "./data/schema.json";
 import questionsRaw from "./data/questions.json";
 import coverage from "./fixtures/coverage.json";
-import { shelfOutcomes, SHELF_ORDER } from "./shelves";
+import { questionTables, shelfOutcomes, SHELF_ORDER } from "./shelves";
 import type { Question, Schema } from "./types";
 
 const schema = schemaRaw as unknown as Schema;
@@ -25,5 +25,10 @@ describe("shelfOutcomes", () => {
 
   it("matches the per-question outcomes pinned for Python", () => {
     for (let k = 0; k <= 3; k++) expect(shelfOutcomes(questions, schema, k)).toEqual(coverage.outcomes[String(k) as "0" | "1" | "2" | "3"]);
+  });
+
+  it("lists the shelves each question reads, in the order its query visits them", () => {
+    expect(Object.fromEntries(questions.map(q => [q.id, questionTables(q.sql)]))).toEqual(coverage.tables);
+    expect(questionTables("SELECT o.id FROM orders o JOIN customers c ON o.customer_id = c.id")).toEqual(["orders", "customers"]);
   });
 });

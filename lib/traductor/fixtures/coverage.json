@@ -53,5 +53,39 @@
       "served",
       "served"
     ]
+  },
+  "tables": {
+    "q01": [
+      "customers"
+    ],
+    "q02": [
+      "customers"
+    ],
+    "q03": [
+      "customers"
+    ],
+    "q04": [
+      "orders"
+    ],
+    "q05": [
+      "orders"
+    ],
+    "q06": [
+      "orders"
+    ],
+    "q07": [
+      "customers",
+      "orders"
+    ],
+    "q08": [
+      "payments"
+    ],
+    "q09": [
+      "orders",
+      "customers"
+    ],
+    "q10": [
+      "payments"
+    ]
   }
 }

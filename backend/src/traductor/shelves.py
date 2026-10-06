@@ -1,7 +1,9 @@
 """How much of the catalog the librarian knows. Mirrors lib/traductor/shelves.ts."""
 
+import re
+
 from .generate import generate
-from .normalize import exact_match
+from .normalize import exact_match, normalize_sql
 from .validate import validate_sql
 
 SHELF_ORDER = ["customers", "orders", "payments"]
@@ -31,3 +33,12 @@ def shelf_outcomes(questions: list[dict], schema: dict, k: int | None = None) ->
         else:
             out.append("served" if exact_match(sql, q["sql"]) else "lost")
     return out
+
+
+def question_tables(sql: str) -> list[str]:
+    """The shelves a query reads (FROM / JOIN targets), each once, in the order the query visits them."""
+    seen: list[str] = []
+    for table in re.findall(r"\b(?:from|join)\s+([a-z_][a-z0-9_]*)", normalize_sql(sql)):
+        if table not in seen:
+            seen.append(table)
+    return seen

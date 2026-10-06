@@ -1,7 +1,5 @@
 import type { Heading } from "@/design-system/demo/project-story";
 
-type NodeCopy = { name: string; sub: string; analogy: string };
-
 export interface TraductorStory {
   name: string;
   oneLiner: string;
@@ -13,7 +11,7 @@ export interface TraductorStory {
   fit: { heading: Heading; worthLabel: string; worth: string; notLabel: string; not: string };
   proves: { heading: Heading; text: string };
   engineers: { summary: string; points: string[]; repoLabel: string };
-  scene: { title: string; caption: string; statusLabels: { active: string; danger: string; success: string }; tapeLabel: string; nodes: { questions: NodeCopy; librarian: NodeCopy; answered: NodeCopy; refused: NodeCopy }; tape: { served: string; rerouted: string; lost: string }; servedOf: (n: number) => string };
+  scene: { title: string; caption: string; tapeLabel: string; desk: string; uncatalogued: string; notHere: string; questions: Record<string, string>; libraryLabel: (known: number) => string; summary: (served: number, refused: number) => string; wrongOf: (n: number) => string; tape: { served: string; rerouted: string; lost: string }; servedOf: (n: number) => string };
 }
 
 export const STORY: Record<"en" | "es", TraductorStory> = {
@@ -87,15 +85,26 @@ export const STORY: Record<"en" | "es", TraductorStory> = {
     },
     scene: {
       title: "What the librarian did with each question",
-      caption: "Watch each question go to a known shelf or get an honest refusal.",
-      statusLabels: { active: "looking", success: "answered", danger: "wrong answer" },
+      caption: "The librarian walks to the shelf each question needs. On a shelf it never catalogued, it says so and comes back with a note marked ?.",
       tapeLabel: "Ten questions, in order",
-      nodes: {
-        questions: { name: "Questions", sub: "10 in plain language", analogy: "the visitors" },
-        librarian: { name: "Librarian", sub: "writes the query", analogy: "the librarian" },
-        answered: { name: "Answered", sub: "checked query", analogy: "the right book" },
-        refused: { name: "Refused", sub: "unknown table", analogy: "not on my shelves" },
+      desk: "desk",
+      uncatalogued: "never catalogued",
+      notHere: "Not on my shelves",
+      questions: {
+        q01: "List all customers",
+        q02: "How many customers are there?",
+        q03: "Customers in Mexico",
+        q04: "Orders over 100",
+        q05: "Total order amount",
+        q06: "Orders by status",
+        q07: "Customer with the most orders",
+        q08: "Payments by method",
+        q09: "Pending orders from premium customers",
+        q10: "Average payment amount",
       },
+      libraryLabel: (k) => `A library with three shelves: customers, orders and payments. The librarian knows ${k} of them and walks to the shelf each question needs.`,
+      summary: (served, refused) => `Done: ${served} with the right book and ${refused} honest ${refused === 1 ? "refusal" : "refusals"}.`,
+      wrongOf: (n) => `${n === 0 ? "No" : n} wrong ${n === 1 ? "book" : "books"}.`,
       tape: { served: "answered right", rerouted: "refused", lost: "wrong answer" },
       servedOf: (n) => `Questions answered: ${n} of 10`,
     },
@@ -170,15 +179,26 @@ export const STORY: Record<"en" | "es", TraductorStory> = {
     },
     scene: {
       title: "Lo que hizo el bibliotecario con cada pregunta",
-      caption: "Mira cómo cada pregunta va a un estante conocido o recibe un rechazo honesto.",
-      statusLabels: { active: "buscando", success: "respondió", danger: "respuesta equivocada" },
+      caption: "El bibliotecario camina al estante que necesita cada pregunta. En un estante que nunca catalogó lo dice y vuelve con una nota marcada con ?.",
       tapeLabel: "Diez preguntas, en orden",
-      nodes: {
-        questions: { name: "Preguntas", sub: "10 en lenguaje normal", analogy: "los visitantes" },
-        librarian: { name: "Bibliotecario", sub: "escribe la consulta", analogy: "el bibliotecario" },
-        answered: { name: "Respondida", sub: "consulta revisada", analogy: "el libro correcto" },
-        refused: { name: "Rechazada", sub: "tabla desconocida", analogy: "no está en mis estantes" },
+      desk: "mostrador",
+      uncatalogued: "nunca lo catalogó",
+      notHere: "No está en mis estantes",
+      questions: {
+        q01: "Lista todos los clientes",
+        q02: "¿Cuántos clientes hay?",
+        q03: "Clientes de México",
+        q04: "Pedidos con monto mayor a 100",
+        q05: "Monto total de pedidos",
+        q06: "Pedidos por estado",
+        q07: "Cliente con más pedidos",
+        q08: "Pagos por método",
+        q09: "Pedidos pendientes de clientes premium",
+        q10: "Promedio de monto de pagos",
       },
+      libraryLabel: (k) => `Una biblioteca con tres estantes: clientes, pedidos y pagos. El bibliotecario conoce ${k} y camina al estante que necesita cada pregunta.`,
+      summary: (served, refused) => `Listo: ${served} con el libro correcto y ${refused} ${refused === 1 ? "rechazo honesto" : "rechazos honestos"}.`,
+      wrongOf: (n) => `${n === 0 ? "Ningún libro equivocado" : n === 1 ? "1 libro equivocado" : `${n} libros equivocados`}.`,
       tape: { served: "respondida bien", rerouted: "rechazada", lost: "respuesta equivocada" },
       servedOf: (n) => `Preguntas respondidas: ${n} de 10`,
     },
