@@ -12,4 +12,10 @@ describe("routeQuestion", () => {
     expect(routeQuestion("list customers")?.template).toBe("list_all");
     expect(routeQuestion("cuántos pedidos hay")?.template).toBe("count_all");
   });
+
+  it("does not refuse read questions that merely contain a write-verb stem", () => {
+    for (const text of ["¿qué pedidos se actualizaron?", "lista los borradores de pedidos", "clientes eliminados"]) {
+      expect(routeQuestion(text), text).not.toBeNull();
+    }
+  });
 });
