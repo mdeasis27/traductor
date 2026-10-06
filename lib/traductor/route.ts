@@ -35,8 +35,12 @@ function detectNumber(text: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
+// Write verbs are refused before table matching; the templates only read.
+const WRITE_VERBS = /\b(drop|delete|insert|update|truncate|alter|elimina\w*|borra\w*|actualiza\w*|inserta\w*)\b/;
+
 export function routeQuestion(text: string): Question | null {
   const lower = text.toLowerCase();
+  if (WRITE_VERBS.test(lower)) return null;
   const table = detectTable(lower);
   if (!table) return null;
 

@@ -63,3 +63,12 @@ def test_benchmark_matches_fixture():
     assert result["hallucinationsCaught"] == fixture["hallucinationsCaught"]
     assert result["hallucinationsTotal"] == fixture["hallucinationsTotal"]
     assert result["falsePositives"] == fixture["falsePositives"]
+
+
+def test_shelf_outcomes_match_fixture():
+    from traductor.shelves import shelf_outcomes
+
+    coverage = _load("coverage.json")
+    for k, expected in coverage["outcomes"].items():
+        assert shelf_outcomes(_questions(), _schema(), int(k)) == expected
+    assert shelf_outcomes(_questions(), _schema(), None) == coverage["outcomes"]["3"]
