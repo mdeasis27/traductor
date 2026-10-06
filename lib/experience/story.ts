@@ -18,7 +18,7 @@ export interface TraductorStory {
 
 export const STORY: Record<"en" | "es", TraductorStory> = {
   en: {
-    name: "Text to SQL",
+    name: "Business query translator",
     oneLiner: "A good librarian searches the shelves they know and tells you when what you asked for isn't there.",
     chips: ["Questions to data", "2 min", "Live demo"],
     analogy: {
