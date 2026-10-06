@@ -3,7 +3,7 @@
 // against a schema trimmed to the first k tables. Mirrors backend/src/traductor/shelves.py.
 
 import { generate } from "./generate";
-import { exactMatch } from "./normalize";
+import { exactMatch, normalizeSql } from "./normalize";
 import { validateSql } from "./validate";
 import type { Question, Schema } from "./types";
 
@@ -25,4 +25,11 @@ export function shelfOutcomes(questions: readonly Question[], schema: Schema, k:
     if (!validateSql(sql, known).ok) return "rerouted";
     return exactMatch(sql, q.sql) ? "served" : "lost";
   });
+}
+
+/** The shelves a query reads (FROM / JOIN targets), each once, in the order the query visits them. */
+export function questionTables(sql: string): string[] {
+  const seen: string[] = [];
+  for (const m of normalizeSql(sql).matchAll(/\b(?:from|join)\s+([a-z_][a-z0-9_]*)/g)) if (!seen.includes(m[1])) seen.push(m[1]);
+  return seen;
 }

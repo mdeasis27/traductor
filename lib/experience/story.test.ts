@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { STORY } from "./story";
+import questionsRaw from "@/lib/traductor/data/questions.json";
 import { lintStory, storyStrings as strings } from "@/design-system/demo/copy-lint";
 
 describe("Traductor story copy", () => {
@@ -34,5 +35,14 @@ describe("Traductor story copy", () => {
     expect(STORY.en.tryIt.question(2)).toContain("knowing 2 of the 3 tables");
     expect(STORY.es.tryIt.question(1)).toContain("conociendo 1 de las 3 tablas,");
     expect(STORY.es.compare.verdict(8)).toBe("8 de 10 preguntas respondidas");
+  });
+
+  it("has a scene line for every committed question, in both languages", () => {
+    const ids = questionsRaw.questions.map(q => q.id);
+    expect(Object.keys(STORY.en.scene.questions)).toEqual(ids);
+    expect(Object.keys(STORY.es.scene.questions)).toEqual(ids);
+    expect(STORY.es.scene.questions.q08).toBe(questionsRaw.questions[7].text);
+    expect(STORY.en.scene.summary(8, 1)).toBe("Done: 8 with the right book and 1 honest refusal.");
+    expect(STORY.es.scene.wrongOf(0)).toBe("Ningún libro equivocado.");
   });
 });

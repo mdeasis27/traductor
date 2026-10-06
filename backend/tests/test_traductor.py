@@ -9,6 +9,8 @@ from traductor.normalize import exact_match
 from traductor.validate import validate_sql, violation_label
 
 FIXTURES = Path(__file__).parent / "fixtures"
+# One fixture shared with the TypeScript suite (lib/traductor/shelves.test.ts).
+COVERAGE = Path(__file__).parents[2] / "lib" / "traductor" / "fixtures" / "coverage.json"
 
 
 def _load(name: str):
@@ -68,7 +70,14 @@ def test_benchmark_matches_fixture():
 def test_shelf_outcomes_match_fixture():
     from traductor.shelves import shelf_outcomes
 
-    coverage = _load("coverage.json")
+    coverage = json.loads(COVERAGE.read_text(encoding="utf-8"))
     for k, expected in coverage["outcomes"].items():
         assert shelf_outcomes(_questions(), _schema(), int(k)) == expected
     assert shelf_outcomes(_questions(), _schema(), None) == coverage["outcomes"]["3"]
+
+
+def test_question_tables_match_fixture():
+    from traductor.shelves import question_tables
+
+    coverage = json.loads(COVERAGE.read_text(encoding="utf-8"))
+    assert {q["id"]: question_tables(q["sql"]) for q in _questions()} == coverage["tables"]

@@ -28,7 +28,7 @@ export default function Page() {
   const clear = () => { setPrediction(null); demo.reset(); };
   const reset = () => { setTables(DEFAULT_TABLES); clear(); };
   const input = { tables };
-  const scene = (frame: typeof COMPLETE_FRAME) => result ? <TraductorStoryScene frame={frame} result={result} locale={locale} /> : null;
+  const scene = (frame: typeof COMPLETE_FRAME) => run && result ? <TraductorStoryScene frame={frame} result={result} tables={run.input.tables} locale={locale} /> : null;
 
   return <main className="mx-auto max-w-5xl px-5 py-8 text-foreground sm:py-12">
     <StoryHero name={t.name} oneLiner={t.oneLiner} chips={t.chips} />

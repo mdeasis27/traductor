@@ -23,13 +23,16 @@ it("the raw model draft, run without the guard, gets 3 answers wrong", () => {
   expect(rawDraftWrong()).toEqual(["q05", "q07", "q09"]);
 });
 
-it("runs the mission, reveals in two groups of five and stops when cancelled", async () => {
-  const ids: string[] = [];
-  const run = await runMission({ tables: 2 }, new AbortController().signal, e => ids.push(e.id));
+it("runs the mission, one step per question with the shelves it needs, and stops when cancelled", async () => {
+  const events: { id: string; messageKey: string; evidenceIds?: string[] }[] = [];
+  const run = await runMission({ tables: 2 }, new AbortController().signal, e => events.push(e));
   expect(run.result.items).toHaveLength(10);
   expect(run.result.served).toBe(8);
   expect(run.result.comparison).toEqual({ mine: 0, raw: 3 });
-  expect(ids).toEqual(["batch-1", "batch-2"]);
+  expect(run.result.items[6]).toEqual({ id: "q07", status: "served", tables: ["customers", "orders"] });
+  expect(run.result.items[7]).toEqual({ id: "q08", status: "rerouted", tables: ["payments"] });
+  expect(events).toHaveLength(10);
+  expect(events[7]).toMatchObject({ id: "ask-8", messageKey: "ask.rerouted", evidenceIds: ["q08", "payments"] });
   const c = new AbortController(); c.abort();
   await expect(runMission({ tables: 2 }, c.signal, () => {})).rejects.toThrow();
 });
