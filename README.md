@@ -4,7 +4,7 @@
 [![CI](https://github.com/mdeasis27/traductor/actions/workflows/ci.yml/badge.svg)](https://github.com/mdeasis27/traductor/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 <!-- /community-badges -->
 
-[Español](README.es.md) · [Try the demo](https://traductor-manueldeasis27-2515s-projects.vercel.app/en/app) · [Case study](https://manueldeasis.com/en/projects/traductor) · [Source](https://github.com/mdeasis27/traductor)
+[Español](README.es.md) · [Try the demo](https://traductor-manueldeasis27-2515s-projects.vercel.app/en/app) · [Case study](https://portafolio-mdea.vercel.app/en/projects/traductor) · [Source](https://github.com/mdeasis27/traductor)
 
 ![Actual interactive local interface](docs/images/cover.png)
 
